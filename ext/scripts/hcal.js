@@ -8,12 +8,26 @@ const fixed_location = null; //[42.298, -71.219];
 function update_position (callback) {
 	if (fixed_location)
 		callback(2, fixed_location[0], fixed_location[1]);
-	else if ("geolocation" in navigator)
-		navigator.geolocation.getCurrentPosition(function(position) {
-			callback(1, position.coords.latitude, position.coords.longitude);
+	else {
+		chrome.storage.local.get(['geo'], function(res) {
+			if (res.geo) {
+				console.log('Retrieved [' + res.geo.latitude + ',' + res.geo.longitude + ']');
+				callback(3, res.geo.latitude, res.geo.longitude);
+			}
+			if ("geolocation" in navigator)
+				navigator.geolocation.getCurrentPosition(function(position) {
+					let latitude = position.coords.latitude;
+					let longitude = position.coords.longitude;
+					console.log('Received [' + latitude + ',' + longitude + ']');
+					chrome.storage.local.set({geo: {latitude : latitude, longitude: longitude}}, function() {
+					        console.log('Saved [' + latitude + ',' + longitude + ']');
+					});
+					callback(1, latitude, longitude);
+		        });
+			else
+				callback (0, null, null);
 		});
-	else
-		callback (0, null, null);
+	}
 }
 
 let locale, hco;
@@ -147,7 +161,7 @@ function $month (m) {
 
 		eraseChildren($stat_location);
 		appendChildren($stat_location,
-			$('img', {height: '25pt', src: '/icons/location.svg', style: "position: relative; top: 7px"}),
+			$('img', {height: '25pt', src: (status == 1)?'/icons/location.svg' : '/icons/location_y.svg', style: "position: relative; top: 7px"}),
 			$('span', {}, "&lrm; " + disp + " &rlm;"));
 	}
 	set_stat_location(0);
