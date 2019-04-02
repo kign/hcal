@@ -32,6 +32,9 @@ function update_position (callback) {
 
 let locale, hco;
 function set_locale (nl) {
+	chrome.storage.local.set({locale: nl}, function() {
+		console.log('Saved locale = ', nl);
+	});
 	locale = nl;
 	hco = locale.substr(0,1);
 	$cal.setAttribute('dir', (locale == 'he')? 'rtl': 'ltr');
@@ -154,7 +157,6 @@ function $month (m) {
 
 	const $stat_location = $('span', {});
 	const set_stat_location = function (status, latitude, longitude) {
-		// 42.378, -71.105
 		let disp = "N/A"
 		if (status > 0)
 			disp = latitude.toFixed(3) + ", " + longitude.toFixed(3);
@@ -351,12 +353,14 @@ function $year (y) {
 	const rows = [];
 	let row = [];
 	const columns = 3;
+	const thism = this_month ();
 
 	let months = y.months.slice(0,y.months.length);
 	months.sort(function(a,b) { return a.days[0].abs() - b.days[0].abs() });
 	let pos = 0;
 	for (const m of months) {
-		const $m = $('td', {valign: 'top', align: 'center'},
+		const clazz = (m.days[0].abs() == thism.days[0].abs())? "this_month" : "plain";
+		const $m = $('td', {valign: 'top', align: 'center', class: clazz},
 			$('div', {class: 'h'}, m.getName(hco)),
 			$('div', {class: 'e'},
 				moment(m.days[0].greg()).format('MMM-D') +
@@ -445,7 +449,7 @@ function $metoniccycle(ynum) {
 	const sely = ynum;
 
 	for (let yi = ynum - 9; yi <= ynum + 9; yi ++) {
-		const gy = yi - 3760;
+		const gy = yi - 3761;
 		if (yi == sely)
 			row.push($left);
 		const y19 = yi % 19;
@@ -493,10 +497,25 @@ function set_view_metoniccycle (y) {
 	$cal.appendChild($metoniccycle(y));
 }
 
-let today = new Hebcal.HDate();
-let m = new Hebcal.Month(today.getMonth(), today.getFullYear());
-set_locale('en');
-let y = new Hebcal();
-set_view_month(m);
-//set_view_year(y);
-//set_view_metoniccycle(y.year);
+function this_month () {
+	let today = new Hebcal.HDate();
+	let m = new Hebcal.Month(today.getMonth(), today.getFullYear());
+	return m;
+}
+
+chrome.storage.local.get(['locale'], function(res) {
+	if (res.locale) {
+		console.log("Retrieved locale = ", res.locale);
+		locale = res.locale;
+	}
+	else {
+		locale = 'en';
+		console.log("locale set to default = ", locale);
+	}
+	set_locale(locale);
+	set_view_month(this_month());
+	//let y = new Hebcal();
+	//set_view_year(y);
+	//set_view_metoniccycle(y.year);
+});
+

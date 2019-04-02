@@ -3,6 +3,7 @@ td.shabbat {
 }
 
 td.today {
+	color: rgb(10,10,255);
 	font-weight: bold;
 }
 
@@ -57,6 +58,10 @@ table.year {
 
 table.year div.e {
 	font-size: 8pt;
+}
+
+table.year td.this_month {
+	border: 1px solid blue;
 }
 
 /*
