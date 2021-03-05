@@ -37,7 +37,7 @@ function set_locale (nl) {
 	});
 	locale = nl;
 	hco = locale.substr(0,1);
-	$cal.setAttribute('dir', (locale == 'he')? 'rtl': 'ltr');
+	$cal.setAttribute('dir', (locale === 'he')? 'rtl': 'ltr');
 }
 
 function wday (n) {
@@ -50,23 +50,23 @@ function wday (n) {
 	{en: "F"},
 	{en: "S"}];
 
-	if (locale == 'en')
+	if (locale === 'en')
 		return weekdays[n][locale];
-	else if (locale == 'he')
+	else if (locale === 'he')
 		return Hebcal.gematriya(n + 1);
 }
 
 function mday (n) {
-	if (locale == 'en')
+	if (locale === 'en')
 		return 1 + n;
-	else if (locale == 'he')
+	else if (locale === 'he')
 		return Hebcal.gematriya(n + 1);
 }
 
 function $lang(callback) {
-	const $ctrl = $('span', {}, (locale == 'en')? "EN" : "HB");
+	const $ctrl = $('span', {}, (locale === 'en')? "EN" : "HB");
 	make_active($ctrl, function () {
-		set_locale((locale == 'en')? 'he' : 'en');
+		set_locale((locale === 'en')? 'he' : 'en');
 		callback ();
 	});
 	return $ctrl;
