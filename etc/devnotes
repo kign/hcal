@@ -1,0 +1,43 @@
+https://github.com/hebcal/hebcal-js
+
+file:///Users/kignatiev/Apps/node_modules/hebcal/examples.html
+
+
+
+Hebcal = require('hebcal');
+
+p=new Hebcal(5778);
+var year = new Hebcal();
+
+
+> for (ii = 0; ii < p.months.length; ii++)
+... console.log(p.months[ii].days[0].abs());
+
+> for (ii = 0; ii < p.months.length; ii++)
+... console.log(p.months[ii].days[0].greg());
+
+
+> Hebcal.cities.getCity('Jerusalem')
+[ 31.783, 35.233, true ]
+
+year.year
+5779
+
+
+> year.holidays['1 Adar 1 5779']
+[ Event {
+    date: HDate { month: 12, day: 1, year: 5779, lat: 0, long: 0, il: false },
+    desc: [ 'Rosh Chodesh 2', 0, 'ראש חודש ב\'' ],
+    USER_EVENT: false,
+    LIGHT_CANDLES: false,
+    YOM_TOV_ENDS: false,
+    CHUL_ONLY: false,
+    IL_ONLY: false,
+    LIGHT_CANDLES_TZEIS: false } ]
+
+
+https://github.com/mourner/suncalc
+
+var SunCalc = require('suncalc');
+
+SunCalc.getTimes(new Date(), /*Number*/ latitude, /*Number*/ longitude)
