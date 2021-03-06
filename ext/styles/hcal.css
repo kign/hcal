@@ -1,3 +1,7 @@
+td {
+	white-space: nowrap;
+}
+
 td.shabbat {
 	color: red;
 }
