@@ -1,20 +1,31 @@
-'use strict'
+'use strict';
 
 const $ = makeElm;
 const $svg = makeSVGElm;
 const $cal = document.getElementById('cal');
 const fixed_location = null; //[42.298, -71.219];
 
+let locale, hco;
+
+const GLType = {
+  /* possible geolocation status */
+	NA: 0,    // feature not available in browser, or uninitialized
+	OK: 1,    // everything works, geolocation available
+	FIXED: 2, // pre-fixed location
+	SAVED: 3, // Saved in browser, stale
+	ERR: 4    // OS/browser not cooperating
+};
+
 function update_position (callback) {
 	if (fixed_location)
-		callback(2, fixed_location[0], fixed_location[1]);
+		callback(GLType.FIXED, fixed_location[0], fixed_location[1]);
 	else {
 		chrome.storage.local.get(['geo'], function(res) {
 			if (res.geo) {
 				console.log('Retrieved [' + res.geo.latitude + ',' + res.geo.longitude + ']');
-				callback(3, res.geo.latitude, res.geo.longitude);
+				callback(GLType.SAVED, res.geo.latitude, res.geo.longitude);
 			}
-			if ("geolocation" in navigator)
+			if (navigator.geolocation)
 				navigator.geolocation.getCurrentPosition(function(position) {
 					let latitude = position.coords.latitude;
 					let longitude = position.coords.longitude;
@@ -22,15 +33,22 @@ function update_position (callback) {
 					chrome.storage.local.set({geo: {latitude : latitude, longitude: longitude}}, function() {
 					        console.log('Saved [' + latitude + ',' + longitude + ']');
 					});
-					callback(1, latitude, longitude);
-		        });
+					callback(GLType.OK, latitude, longitude);
+		        },
+					function(error) {
+						console.log("getCurrentPosition error =", error);
+						callback (GLType.ERR);
+					},
+					{maximumAge: 600000,
+						timeout: 30000,
+						enableHighAccuracy: false
+					});
 			else
-				callback (0, null, null);
+				callback (GLType.NA);
 		});
 	}
 }
 
-let locale, hco;
 function set_locale (nl) {
 	chrome.storage.local.set({locale: nl}, function() {
 		console.log('Saved locale = ', nl);
@@ -131,6 +149,8 @@ function $month (m) {
 	const hrows = [];
 	const today = Hebcal.HDate();
 
+	let location_disp = "N/A";
+
 	let pos = m.days[0].getDay();
 	let row = [...Array(pos).keys()].map (x => $('td', {}, "&nbsp;"));
 
@@ -157,14 +177,19 @@ function $month (m) {
 
 	const $stat_location = $('span', {});
 	const set_stat_location = function (status, latitude, longitude) {
-		let disp = "N/A"
-		if (status > 0)
-			disp = latitude.toFixed(3) + ", " + longitude.toFixed(3);
+		if (latitude !== undefined && longitude !== undefined)
+			location_disp = latitude.toFixed(3) + ", " + longitude.toFixed(3);
 
 		eraseChildren($stat_location);
+		const locColors = ['orange', 'black', 'navy', 'steelblue', 'red'];
+		const locStatus = ['N/A', 'OK', 'fixed', 'stale', 'error'];
+
 		appendChildren($stat_location,
-			$('img', {height: '25pt', src: (status == 1)?'/icons/location.svg' : '/icons/location_y.svg', style: "position: relative; top: 7px"}),
-			$('span', {}, "&lrm; " + disp + " &rlm;"));
+			$('img', {height: '25pt',
+				 				title: locStatus[status],
+								src: `/icons/location_${locColors[status]}.svg`,
+				        style: "position: relative; top: 7px"}),
+			$('span', {}, "&lrm; " + location_disp + " &rlm;"));
 	}
 	set_stat_location(0);
 
@@ -193,7 +218,7 @@ function $month (m) {
 
 	for (let ii = 0; ii < m.days.length; ii ++) {
 		let holidays = m.days[ii].holidays(false).map(x => x.getDesc(hco)).join(' | ');
-		if (locale == 'he')
+		if (locale === 'he')
 			holidays = holidays.replace('(','{0}').replace(')','{1}').replace('{0}',')').replace('{1}','(');
 		let $hday = null;
 		if (holidays) {
@@ -207,9 +232,9 @@ function $month (m) {
 		let clazz = [];
 		if (holidays)
 			clazz.push('holiday');
-		if (pos % 7 == 6)
+		if (pos % 7 === 6)
 			clazz.push('shabbat');
-		if (m.days[ii].abs() == today.abs())
+		if (m.days[ii].abs() === today.abs())
 			clazz.push('today');
 
 		const $day = $('td',
@@ -245,19 +270,19 @@ function $month (m) {
 		row.push($day);
 
 		pos ++;
-		if (pos % 7 == 0) {
+		if (pos % 7 === 0) {
 			rows.push($('tr', {}, ...row));
 			if (ii < m.days.length - 1)
 				row = [];
 		}
-		else if (ii == m.days.length - 1) {
+		else if (ii === m.days.length - 1) {
 			row.push(...[...Array(7 - pos % 7).keys()].map (x => $('td', {}, "&nbsp;")));
 			rows.push($('tr', {}, ...row));
 		}
 	}
 
 	let caption = m.getName(hco) + " | ";
-	if (locale == 'en')
+	if (locale === 'en')
 		caption += m.days[0].getFullYear();
 	else
 		caption += Hebcal.gematriya(m.days[0].getFullYear());
@@ -266,10 +291,10 @@ function $month (m) {
 	if (m.days[m.days.length - 1].greg().getYear() > m.days[0].greg().getYear())
 		caption += "-" + moment(m.days[m.days.length - 1].greg()).format('YYYY');
 
-	let aleft = (locale == 'en')? 'left' : 'right';
-	let aright = (locale == 'en')? 'right' : 'left';
-	let pleft = (locale == 'en')? '&#8676;' : '&#8677;';
-	let pright = (locale == 'en')? '&#8677;' : '&#8676;';
+	let aleft = (locale === 'en')? 'left' : 'right';
+	let aright = (locale === 'en')? 'right' : 'left';
+	let pleft = (locale === 'en')? '&#8676;' : '&#8677;';
+	let pright = (locale === 'en')? '&#8677;' : '&#8676;';
 
 	let $left = $('td', {align: aleft}, pleft);
 	make_active($left, function() {
@@ -324,9 +349,9 @@ function $monthmin(m, incl_hdr) {
 		let clazz = [];
 		if (m.days[ii].holidays(false).length > 0)
 			clazz.push('holiday');
-		if (pos % 7 == 6)
+		if (pos % 7 === 6)
 			clazz.push('shabbat');
-		if (m.days[ii].abs() == today.abs())
+		if (m.days[ii].abs() === today.abs())
 			clazz.push('today');
 
 		const $day = $('td',
@@ -336,12 +361,12 @@ function $monthmin(m, incl_hdr) {
 		row.push($day);
 
 		pos ++;
-		if (pos % 7 == 0) {
+		if (pos % 7 === 0) {
 			rows.push($('tr', {}, ...row));
 			if (ii < m.days.length - 1)
 				row = [];
 		}
-		else if (ii == m.days.length - 1) {
+		else if (ii === m.days.length - 1) {
 			row.push(...[...Array(7 - pos % 7).keys()].map (x => $('td', {}, "&nbsp;")));
 			rows.push($('tr', {}, ...row));
 		}
@@ -359,7 +384,7 @@ function $year (y) {
 	months.sort(function(a,b) { return a.days[0].abs() - b.days[0].abs() });
 	let pos = 0;
 	for (const m of months) {
-		const clazz = (m.days[0].abs() == thism.days[0].abs())? "this_month" : "plain";
+		const clazz = (m.days[0].abs() === thism.days[0].abs())? "this_month" : "plain";
 		const $m = $('td', {valign: 'top', align: 'center', class: clazz},
 			$('div', {class: 'h'}, m.getName(hco)),
 			$('div', {class: 'e'},
@@ -372,12 +397,12 @@ function $year (y) {
 		});
 
 		row.push($m);
-		if ((1 + pos) % columns == 0) {
+		if ((1 + pos) % columns === 0) {
 			rows.push($('tr', {}, ...row));
 			if (pos < months.length - 1)
 				row = []
 		}
-		else if (pos == months.length - 1) {
+		else if (pos === months.length - 1) {
 			row.push(...[...Array(columns - 1 - pos % columns).keys()].map (x => $('td', {}, "&nbsp;")));
 			rows.push($('tr', {}, ...row));
 		}
@@ -387,7 +412,7 @@ function $year (y) {
 	const day0 = months[0].days[0];
 	const gy = parseInt(moment(day0.greg()).format('YYYY'));
 	let caption;
-	if (locale == 'en')
+	if (locale === 'en')
 		caption = day0.getFullYear();
 	else
 		caption = Hebcal.gematriya(day0.getFullYear());
@@ -397,10 +422,10 @@ function $year (y) {
 		set_view_metoniccycle(y.year);
 	});
 
-	let aleft = (locale == 'en')? 'left' : 'right';
-	let aright = (locale == 'en')? 'right' : 'left';
-	let pleft = (locale == 'en')? '&#8676;' : '&#8677;';
-	let pright = (locale == 'en')? '&#8677;' : '&#8676;';
+	let aleft = (locale === 'en')? 'left' : 'right';
+	let aright = (locale === 'en')? 'right' : 'left';
+	let pleft = (locale === 'en')? '&#8676;' : '&#8677;';
+	let pright = (locale === 'en')? '&#8677;' : '&#8676;';
 
 	let $left = $('td', {align: aleft}, pleft);
 	make_active($left, function() {
@@ -432,10 +457,10 @@ function $metoniccycle(ynum) {
 	const rows = [];
 	let row = [];
 
-	let aleft = (locale == 'en')? 'left' : 'right';
-	let aright = (locale == 'en')? 'right' : 'left';
-	let pleft = (locale == 'en')? '&#8676;' : '&#8677;';
-	let pright = (locale == 'en')? '&#8677;' : '&#8676;';
+	let aleft = (locale === 'en')? 'left' : 'right';
+	let aright = (locale === 'en')? 'right' : 'left';
+	let pleft = (locale === 'en')? '&#8676;' : '&#8677;';
+	let pright = (locale === 'en')? '&#8677;' : '&#8676;';
 
 	let $left = $('td', {align: aleft}, pleft);
 	make_active($left, function() {
@@ -450,25 +475,25 @@ function $metoniccycle(ynum) {
 
 	for (let yi = ynum - 9; yi <= ynum + 9; yi ++) {
 		const gy = yi - 3761;
-		if (yi == sely)
+		if (yi === sely)
 			row.push($left);
 		const y19 = yi % 19;
-		const leap = y19==0||y19== 3||y19==6||y19==8||y19==11||y19==14||y19==17;
+		const leap = y19===0||y19=== 3||y19===6||y19===8||y19===11||y19===14||y19===17;
 		// Must be equal to Hebcal(yi).days().length
 		const dayscnt = daysperyear[yi - 1] + (leap? 382: 352);
 
 		const $ytd = $('td', {align: 'center', class: "x" + dayscnt},
 			$('div', {class: 'h'},
-				(locale == 'en')? yi: Hebcal.gematriya(yi)),
+				(locale === 'en')? yi: Hebcal.gematriya(yi)),
 			$('div', {class: 'g'}, "" + gy + "-" + (1+gy)));
 		make_active($ytd, function () {
 			set_view_year(new Hebcal(yi));
 		});
 		row.push($ytd);
-		if (yi == sely)
+		if (yi === sely)
 			row.push($right);
-		if (row.length == 3) {
-			rows.push($('tr', {class: (yi == sely)? "current" : "plain"}, ...row))
+		if (row.length === 3) {
+			rows.push($('tr', {class: (yi === sely)? "current" : "plain"}, ...row))
 			row = [];
 		}
 	}
@@ -503,19 +528,23 @@ function this_month () {
 	return m;
 }
 
-chrome.storage.local.get(['locale'], function(res) {
-	if (res.locale) {
-		console.log("Retrieved locale = ", res.locale);
-		locale = res.locale;
-	}
-	else {
-		locale = 'en';
-		console.log("locale set to default = ", locale);
-	}
-	set_locale(locale);
-	set_view_month(this_month());
-	//let y = new Hebcal();
-	//set_view_year(y);
-	//set_view_metoniccycle(y.year);
-});
+function main () {
+	chrome.storage.local.get(['locale'], function (res) {
+		if (res.locale) {
+			console.log("Retrieved locale = ", res.locale);
+			locale = res.locale;
+		} else {
+			locale = 'en';
+			console.log("locale set to default = ", locale);
+			set_locale(locale);
+		}
+		set_view_month(this_month());
+		//let y = new Hebcal();
+		//set_view_year(y);
+		//set_view_metoniccycle(y.year);
+	});
 
+	console.log("URL =", chrome.runtime.getURL('/html/popup.html'));
+}
+
+main ();
