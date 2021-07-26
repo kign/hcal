@@ -1,3 +1,21 @@
+/*
+https://fonts.google.com/specimen/Rubik?subset=hebrew&preview.text=%D7%90%D7%96%20%D7%94%D7%92%D7%99%D7%A2%20%D7%94%D7%9C%D7%99%D7%9C%D7%94%20%D7%A9%D7%9C%20%D7%9B%D7%95%D7%9B%D7%91%20%D7%94%D7%A9%D7%91%D7%99%D7%98%20%D7%94%D7%A8%D7%90%D7%A9%D7%95%D7%9F.&preview.text_type=custom
+ */
+@font-face {
+	font-family: 'Rubik-300';
+	font-style: normal;
+	font-weight: 300;
+	font-display: swap;
+	src: url(/fonts/Rubik-300.ttf) format('truetype');
+}
+@font-face {
+	font-family: 'Rubik-400';
+	font-style: normal;
+	font-weight: 400;
+	font-display: swap;
+	src: url(/fonts/Rubik-400.ttf) format('truetype');
+}
+
 td {
 	white-space: nowrap;
 }
@@ -36,8 +54,17 @@ tr.header {
 	font-size: 15pt;
 }
 
+/*
+ * Month View
+ */
+table.month {
+	border-collapse: collapse;
+	font-family: 'Rubik-400', sans-serif;
+	font-size: 11pt;
+}
+
 table.holidays {
-	font-family: Arial, Helvetica, "sans-serif";
+	font-family: 'Rubik-300', sans-serif;
 	font-size: 11pt;
 	border-spacing: 10pt 2pt;
 	color: rgb(120,120,120);
