@@ -8,12 +8,15 @@ const fixed_location = null; //[42.298, -71.219];
 let locale, hco;
 
 const GLType = {
-  /* possible geolocation status */
+  /* possible geolocation status;
+  don't change these constants without updating set_stat_location()
+  values > 0 must be accompanied by valid coordinates
+   */
+	ERR: -1,  // OS/browser not cooperating
 	NA: 0,    // feature not available in browser, or uninitialized
 	OK: 1,    // everything works, geolocation available
 	FIXED: 2, // pre-fixed location
-	SAVED: 3, // Saved in browser, stale
-	ERR: 4    // OS/browser not cooperating
+	SAVED: 3  // Saved in browser, stale
 };
 
 function update_position (callback) {
@@ -181,17 +184,17 @@ function $month (m) {
 			location_disp = latitude.toFixed(3) + ", " + longitude.toFixed(3);
 
 		eraseChildren($stat_location);
-		const locColors = ['orange', 'black', 'navy', 'steelblue', 'red'];
-		const locStatus = ['N/A', 'OK', 'fixed', 'stale', 'error'];
+		const locColors = ['red', 'orange', 'black', 'navy', 'steelblue'];
+		const locStatus = ['error', 'N/A', 'OK', 'fixed', 'stale'];
 
 		appendChildren($stat_location,
 			$('img', {height: '25pt',
-				 				title: locStatus[status],
-								src: `/icons/location_${locColors[status]}.svg`,
+				 				title: locStatus[1+status],
+								src: `/icons/location_${locColors[1+status]}.svg`,
 				        style: "position: relative; top: 7px"}),
 			$('span', {}, "&lrm; " + location_disp + " &rlm;"));
 	}
-	set_stat_location(0);
+	set_stat_location(GLType.NA);
 
 	let sun_lat = null, sun_lon = null;
 	const $stat_sun = $('span', {});
@@ -321,7 +324,7 @@ function $month (m) {
 						$right)))),
 		$('tr', {},
 			$('td', {valign: 'top', style: 'margin-right: 20px'},
-				$('table',{border: 0, cellspacing: 2, cellpadding: 2, style: "border-collapse: collapse"}, ...rows)),
+				$('table',{border: 0, cellspacing: 2, cellpadding: 2, class: 'month'}, ...rows)),
 			$('td', {width: '10px'}, "&nbsp;"),
 			$('td', {width: '10px', style: 'border-' + aleft + ': 1px solid rgb(128,128,128)'}, "&nbsp;"),
 			$('td', {valign: 'top'},
