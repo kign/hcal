@@ -11,11 +11,14 @@ CDPATH=''
 cd "$( dirname "${BASH_SOURCE[0]}" )"/..
 cwd=$(pwd)
 
-type svgtoimg >/dev/null 2>&1 || { echo >&2 "svgtoimg not installed. Aborting."; exit 1; }
+type svgtoimg >/dev/null 2>&1 || { echo >&2 "svgtoimg not installed. Aborting (check out https://github.com/kign/inet-lab/tree/master/java-master)."; exit 1; }
 
 printf "\n${LIGHT_CYAN}Generating icons${NC}\n"
 
 mkdir -p ext/icons
+svgtoimg -g 16,16 assets/01-tishrei.svg ext/icons/01-tishrei-16.png
+svgtoimg -g 24,24 assets/01-tishrei.svg ext/icons/01-tishrei-24.png
+svgtoimg -g 32,32 assets/01-tishrei.svg ext/icons/01-tishrei-32.png
 svgtoimg -g 128,128 assets/01-tishrei.svg ext/icons/01-tishrei-128.png
 
 for a in Ic_today_48px.svg location.svg location_y.svg sunrise.svg sunset.svg; do
@@ -43,6 +46,14 @@ printf "\n${LIGHT_CYAN}Linking ignlib.js from another Git project${NC}\n"
 
 (
   cd ext/lib
+  if [ ! -e ../../../dw-new-comments ]; then
+    printf "${LIGHT_RED}Project https://github.com/kign/dw-new-comments is missing, clone it first${NC}"
+    exit 1
+  fi
+  if [ ! -e ../../../dw-new-comments/ext/scripts/ignlib.js ]; then
+    printf "${LIGHT_RED}Cannot locate file ignlib.js in project dw-new-comments${NC}"
+    exit 1
+  fi
   rm -f ignlib.js
   echo "Current directory: $(pwd)"
   echo "ln -s ../../../dw-new-comments/ext/scripts/ignlib.js ."
