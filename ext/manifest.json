@@ -1,16 +1,20 @@
 {
   "name": "Real Jewish calendar",
-  "version": "0.0.1",
-  "manifest_version": 2,
+  "version": "0.0.2",
+  "manifest_version": 3,
   "description": "Traditional Jewish calendar with jewish holidays, moon phases, sunsets, sunrises and more",
   "icons": { "128": "icons/01-tishrei-128.png" },
   "permissions" : [
     "geolocation",
     "storage"
   ],
-  "browser_action": {
+  "action": {
     "default_title": "Jewish calendar",
-    "default_icon": "icons/01-tishrei-128.png",
+    "default_icon": {
+      "16": "icons/01-tishrei-16.png",
+      "24": "icons/01-tishrei-24.png",
+      "32": "icons/01-tishrei-32.png"
+    },
     "default_popup": "html/popup.html"
   }
 }
