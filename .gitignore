@@ -2,3 +2,5 @@
 /ext/lib
 .DS_Store
 /.idea
+/etc/hcal.pem
+/hcal.zip
